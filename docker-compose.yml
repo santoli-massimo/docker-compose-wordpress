@@ -1,0 +1,56 @@
+version: '3.4'
+
+x-function: &function
+  restart: unless-stopped
+  stdin_open: true
+  tty: true
+
+services:
+
+  # Mysql
+  mysql:
+    image: mysql:latest
+    volumes:
+      - mysql_dbdata:/var/lib/mysql
+    command: [
+      '--default_authentication_plugin=mysql_native_password',
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci'
+    ]
+    environment:
+      - "MYSQL_DATABASE=${COMPOSE_PROJECT_NAME}"
+      - "MYSQL_USER=${COMPOSE_PROJECT_NAME}"
+      - "MYSQL_PASSWORD=${PASSWORD}"
+      - "MYSQL_ROOT_PASSWORD=${PASSWORD}_root"
+    networks:
+      default:
+        aliases:
+          - mysql
+    <<: *function
+
+  # Wordpress
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - ${WORDPRESS_PORT}:80
+    environment:
+      - "WORDPRESS_DB_HOST=mysql"
+      - "WORDPRESS_DB_NAME=${COMPOSE_PROJECT_NAME}"
+      - "WORDPRESS_DB_USER=${COMPOSE_PROJECT_NAME}"
+      - "WORDPRESS_DB_PASSWORD=${PASSWORD}"
+      - "WORDPRESS_TABLE_PREFIX=${COMPOSE_PROJECT_NAME}"
+    depends_on:
+      - mysql
+    networks:
+      default:
+        aliases:
+          - wordpress
+    volumes:
+      - wordpress:/var/www/html
+    <<: *function
+
+volumes:
+  mysql_dbdata:
+  wordpress:
+networks:
+  default:
