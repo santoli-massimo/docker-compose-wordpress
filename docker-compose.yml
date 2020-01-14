@@ -20,8 +20,8 @@ services:
     environment:
       - "MYSQL_DATABASE=${COMPOSE_PROJECT_NAME}"
       - "MYSQL_USER=${COMPOSE_PROJECT_NAME}"
-      - "MYSQL_PASSWORD=${PASSWORD}"
-      - "MYSQL_ROOT_PASSWORD=${PASSWORD}_root"
+      - "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+      - "MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}"
     networks:
       default:
         aliases:
@@ -33,11 +33,13 @@ services:
     image: wordpress:latest
     ports:
       - ${WORDPRESS_PORT}:80
+    volumes:
+      - wordpress:/var/www/html
     environment:
       - "WORDPRESS_DB_HOST=mysql"
       - "WORDPRESS_DB_NAME=${COMPOSE_PROJECT_NAME}"
       - "WORDPRESS_DB_USER=${COMPOSE_PROJECT_NAME}"
-      - "WORDPRESS_DB_PASSWORD=${PASSWORD}"
+      - "WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}"
       - "WORDPRESS_TABLE_PREFIX=${COMPOSE_PROJECT_NAME}"
     depends_on:
       - mysql
@@ -45,9 +47,16 @@ services:
       default:
         aliases:
           - wordpress
-    volumes:
-      - wordpress:/var/www/html
     <<: *function
+
+  sftp:
+    image: atmoz/sftp
+    volumes:
+      - wordpress:/home/wordpress/upload
+    environment:
+      - "SFTP_USERS=wordpress:${SFTP_PASSWORD}"
+    ports:
+      - "${SFTP_PORT}:22"
 
 volumes:
   mysql_dbdata:
